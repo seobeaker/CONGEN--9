@@ -302,10 +302,10 @@ if generate:
             prompt += (
                 "\nStructure the content as follows:\n"
                 "- Start with an intro paragraph tied to the Extra Context.\n"
-                "- Then provide sections with these headings (use ## for every topic heading):\n"
+                "- Then provide sections with these headings (use ### for every topic heading):\n"
             )
             for topic in topics:
-                prompt += f"## {topic} \u2014 Connect this topic clearly back to the Extra Context.\n"
+                prompt += f"### {topic} \u2014 Connect this topic clearly back to the Extra Context.\n"
 
         try:
             client = openai.OpenAI(api_key=api_key)
@@ -326,10 +326,10 @@ if generate:
                 # Remove # markers from Page Title and Meta Description label lines
                 if re.match(r'^#{1,6}\s*(page title|meta description)', line, re.IGNORECASE):
                     line = re.sub(r'^#{1,6}\s*', '', line)
-                # Normalise all other headings to H2
+                # Normalise all other headings to H3
                 elif re.match(r'^#{1,6}\s', line):
                     line = re.sub(r'^#{1,6}\s+', '', line)
-                    line = "## " + line
+                    line = "### " + line
                 cleaned.append(line)
             return "\n".join(cleaned)
 
