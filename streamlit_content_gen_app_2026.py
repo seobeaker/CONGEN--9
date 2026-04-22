@@ -247,7 +247,7 @@ with st.sidebar:
     api_key = st.text_input("OpenAI API Key", type="password", help="Your API key is used only for this session.")
     brand = st.selectbox("Brand", list(brand_tones.keys()))
     model = st.selectbox("Model", ["gpt-5", "gpt-4o", "gpt-4.1", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"], index=0)
-    word_pref = st.radio("Length (soft preference)", options=[750, 1000, 1500], index=1, format_func=lambda x: {750:"Short (~750)",1000:"Medium (~1000)",1500:"Long (~1500)"}[x])
+    word_pref = st.radio("Length (soft preference)", options=[300, 500, 750], index=1, format_func=lambda x: {300:"Short (~300)",500:"Medium (~500)",750:"Long (~750)"}[x])
 
 col1, col2 = st.columns(2)
 with col1:
@@ -302,12 +302,10 @@ if generate:
             prompt += (
                 "\nStructure the content as follows:\n"
                 "- Start with an intro paragraph tied to the Extra Context.\n"
-                "- Then provide sections with these headings:\n"
+                "- Then provide sections with these headings (use ## for every topic heading):\n"
             )
-            headings = ["##", "###", "####"]
-            for i, topic in enumerate(topics):
-                prefix = headings[i] if i < len(headings) else "####"
-                prompt += f"{prefix} {topic} — Connect this topic clearly back to the Extra Context.\n"
+            for topic in topics:
+                prompt += f"## {topic} \u2014 Connect this topic clearly back to the Extra Context.\n"
 
         try:
             client = openai.OpenAI(api_key=api_key)
@@ -320,6 +318,22 @@ if generate:
         except Exception as e:
             st.error(f"OpenAI error: {e}")
             st.stop()
+
+        def clean_output(text):
+            lines = text.splitlines()
+            cleaned = []
+            for line in lines:
+                # Remove # markers from Page Title and Meta Description label lines
+                if re.match(r'^#{1,6}\s*(page title|meta description)', line, re.IGNORECASE):
+                    line = re.sub(r'^#{1,6}\s*', '', line)
+                # Normalise all other headings to H2
+                elif re.match(r'^#{1,6}\s', line):
+                    line = re.sub(r'^#{1,6}\s+', '', line)
+                    line = "## " + line
+                cleaned.append(line)
+            return "\n".join(cleaned)
+
+        generated = clean_output(generated)
 
         content_only = re.sub(r'(?i)(title|meta description):.*', '', generated)
         word_count = len(re.findall(r'\b\w+\b', content_only))
